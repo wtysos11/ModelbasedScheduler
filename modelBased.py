@@ -102,7 +102,7 @@ def indexEncoding(resIndex,cpuIndex,replicasNum):
         resIndex有12个
         replicasNum >= 2,replicasIndex:0~4
     '''
-    return resIndex + cpuIndex*resMax + replicasNum*resMax*cpuMax
+    return int(resIndex + cpuIndex*resMax + replicasNum*resMax*cpuMax)
 
 def stateDecompse(state):
     '''
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         ## 离散化，并进行编码
         resIndex = math.floor(responseTime/resInterval)
         cpuIndex = math.floor(cpuUtilization/cpuInterval)
-        podIndex = podNum - minContainer
+        podIndex = int(podNum - minContainer)
         state = indexEncoding(resIndex,cpuIndex,podIndex)
         logging.debug('\tencoding current state resIndex:'+str(resIndex)+'\tcpuIndex:'+str(cpuIndex)+'\tpodIndex:'+str(podIndex)+'\tencoding:'+str(state))
         if resIndex < 0 or cpuIndex < 0 or podIndex < 0 or resIndex > resMax or cpuIndex > cpuMax or podIndex > conMax:
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         ## 离散化，并进行编码，然后对新状态更新各个表格
         resIndexNext = math.floor(responseTimeNext/resInterval)
         cpuIndexNext = math.floor(cpuUtilizationNext/cpuInterval)
-        podIndexNext = podNumNext - minContainer
+        podIndexNext = int(podNumNext - minContainer)
         stateNext = indexEncoding(resIndexNext,cpuIndexNext,podIndexNext)
         logging.debug('\tencoding current state resIndex:'+str(resIndexNext)+'\tcpuIndex:'+str(cpuIndexNext)+'\tpodIndex:'+str(podIndexNext)+'\tencoding:'+str(stateNext))
         # 计算代价
