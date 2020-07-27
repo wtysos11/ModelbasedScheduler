@@ -72,8 +72,8 @@ cpuInterval = 2
 # epsilon = 1/t
 minEpsilon = 0.05 # epsilon必须大于0.05
 # learning rate = 0.1
-resMax = 12
-cpuMax = 15
+resMax = 12 # 最大300ms
+cpuMax = 15 # 最大30%
 conMax = 5 # 容器状态数，最低允许2个，因此实际最大为6个
 actionMax = 5
 
@@ -140,17 +140,24 @@ if __name__ == "__main__":
     print('start')
 
     logging.debug('start init')
-    maxQValue = 10000
-    for resIndex in range(resMax):
-        for cpuIndex in range(cpuMax):
-            for conIndex in range(conMax):
-                podNum = conIndex + minContainer
-                state = indexEncoding(resIndex,cpuIndex,conIndex)
-                for acIndex in range(actionMax):
-                    action = acIndex - actionBias
-                    if podNum + action < minContainer or podNum + action > maxContainer:
-                        q_table[state][acIndex] = maxQValue
-
+    # 完全初始化
+    #maxQValue = 10000
+    #for resIndex in range(resMax):
+    #    for cpuIndex in range(cpuMax):
+    #        for conIndex in range(conMax):
+    #            podNum = conIndex + minContainer
+    #            state = indexEncoding(resIndex,cpuIndex,conIndex)
+    #            for acIndex in range(actionMax):
+    #                action = acIndex - actionBias
+    #                if podNum + action < minContainer or podNum + action > maxContainer:
+    #                    q_table[state][acIndex] = maxQValue
+    # 从文件中读取
+    q_file = open('q_table.txt','rb')
+    p_file = open('p_table.txt','rb')
+    c_file = open('c_table.txt','rb')
+    q_table=np.load(q_file)
+    p_table=np.load(p_file)
+    c_table=np.load(c_file)
     logging.debug('end init')
 
     #主循环过程
@@ -171,11 +178,15 @@ if __name__ == "__main__":
         logging.info('\tcurrent state responseTime:'+str(responseTime)+'\tcpuUtilization:'+str(cpuUtilization)+'\tpodNum:'+str(podNum))
         ## 离散化，并进行编码
         resIndex = math.floor(responseTime/resInterval)
+        if resIndex >= resMax:
+            resIndex = resMax - 1
         cpuIndex = math.floor(cpuUtilization/cpuInterval)
+        if cpuIndex >= cpuMax:
+            cpuIndex = cpuMax - 1
         podIndex = int(podNum - minContainer)
         state = indexEncoding(resIndex,cpuIndex,podIndex)
         logging.debug('\tencoding current state resIndex:'+str(resIndex)+'\tcpuIndex:'+str(cpuIndex)+'\tpodIndex:'+str(podIndex)+'\tencoding:'+str(state))
-        if resIndex < 0 or cpuIndex < 0 or podIndex < 0 or resIndex > resMax or cpuIndex > cpuMax or podIndex > conMax:
+        if resIndex < 0 or cpuIndex < 0 or podIndex < 0 or resIndex >= resMax or cpuIndex >= cpuMax or podIndex >= conMax:
             logging.info('Index error')
             continue
         ## 使用epsilon_greedy计算最佳动作
@@ -192,7 +203,12 @@ if __name__ == "__main__":
         else:
             # 最佳动作
             min_value = np.min(q_table[state])
-            action = np.where(q_table[state] == min_value)[0][0]
+            result = np.where(q_table[state] == min_value)[0]
+            if len(result) == 1:
+                action = np.where(q_table[state] == min_value)[0][0]
+            else:
+                label = math.floor(random.random()*len(result))
+                action = np.where(q_table[state] == min_value)[0][label]
             logging.info('choose min action:'+str(action))
             logging.debug(str(q_table[state]))
 
@@ -221,7 +237,11 @@ if __name__ == "__main__":
         logging.info('\tcurrent state responseTime:'+str(responseTimeNext)+'\tcpuUtilization:'+str(cpuUtilizationNext)+'\tpodNum:'+str(podNumNext))
         ## 离散化，并进行编码，然后对新状态更新各个表格
         resIndexNext = math.floor(responseTimeNext/resInterval)
+        if resIndexNext >= resMax:
+            resIndexNext = resMax - 1
         cpuIndexNext = math.floor(cpuUtilizationNext/cpuInterval)
+        if cpuIndexNext >= cpuMax:
+            cpuIndexNext = cpuMax - 1
         podIndexNext = int(podNumNext - minContainer)
         stateNext = indexEncoding(resIndexNext,cpuIndexNext,podIndexNext)
         logging.debug('\tencoding current state resIndex:'+str(resIndexNext)+'\tcpuIndex:'+str(cpuIndexNext)+'\tpodIndex:'+str(podIndexNext)+'\tencoding:'+str(stateNext))
@@ -259,7 +279,7 @@ if __name__ == "__main__":
                     if conIndex < 0 or conIndex >= conMax: #illegal action
                         continue
 
-                    logging.debug('ready to update state('+str(resMax)+','+str(cpuMax)+','+str(conMax)+','+str(a)+')')
+                    logging.debug('ready to update state('+str(nres)+','+str(ncpu)+','+str(npod)+','+str(a)+')')
                     #枚举所有s'不为0的点，得到一个列表
                     result = np.where(p_table[s][a] != 0)
                     result1 = result[0]
@@ -276,11 +296,13 @@ if __name__ == "__main__":
                         minActionValue = np.min(q_table[state])
 
                         totalExpectation += probability * (cost + qAlpha * minActionValue)
-                        logging.debug('Update state:('+str(resIndex)+','+str(cpuIndex)+')')
-                        logging.debug('cost:'+str(cost))
-                        logging.debug('q_table:'+str(q_table[state]))
-                        logging.debug('pro:'+str(probability))
-                        logging.debug('value : '+str(probability * (cost + qAlpha * minActionValue)))
+                        logging.debug('\tUpdate state:('+str(resIndex)+','+str(cpuIndex)+')')
+                        logging.debug('\tcost:'+str(cost))
+                        logging.debug('\tq_table:'+str(q_table[state]))
+                        logging.debug('\tpro:'+str(probability))
+                        logging.debug('\tvalue : '+str(probability * (cost + qAlpha * minActionValue)))
+                        logging.debug('\n')
+                    logging.info('responseIndex:{0},cpuIndex:{1},podIndex:{2},action:{3}'.format(nres,ncpu,npod,a))
                     logging.info('previous Q table:'+str(q_table[s][a]))
                     q_table[s][a] = totalExpectation
                     logging.info('current Q table:'+str(q_table[s][a]))
@@ -293,7 +315,7 @@ if __name__ == "__main__":
         np.save(p_file,p_table)
         np.save(c_file,c_table)
         q_file.close()
-        p_flie.close()
+        p_file.close()
         c_file.close()
         logging.info('cache all files over')
 
