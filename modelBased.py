@@ -7,7 +7,7 @@ import operator
 import numpy as np
 import pandas as pd
 import math
-
+import random
 import logging
  
 def console_out(logFilename):
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     logging.debug('debug test')
     logging.info('model-based algorithm start')
     print('start')
-    
+
     logging.debug('start init')
     maxQValue = 10000
     for resIndex in range(resMax):
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     while True:
         cur_t += 1
         time.sleep(30)
-        logging.info(str(cur_t)+' times start')
+        logging.info('\t \t main algorithm times start: '+ str(cur_t))
         # 执行一次动作
         ## 获取当前状态
         responseTime = fetch_data('res',namespace,svc_name)
@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
         costApp = podNumNext/maxContainer
         totalCost = 0.9*costPerf + 0.1 * costApp
-        logging.info('\ttotalCost:',totalCost)
+        logging.info('\ttotalCost:'+str(totalCost))
 
         # 更新表格
         p_table[state,action,resIndexNext,cpuIndexNext] += 1
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         # 更新全部状态和动作，次数为n次
         for i in range(update_times):
             #枚举状态
-            logging.info('update times:',i)
+            logging.info('update times:'+str(i))
             for s in range(resMax*cpuMax*conMax):
                 for a in range(actionMax):
                     #判断是否存在值
@@ -259,7 +259,7 @@ if __name__ == "__main__":
                     if conIndex < 0 or conIndex >= conMax: #illegal action
                         continue
 
-                    logging.debug('ready to update ',resMax,cpuMax,conMax,a)
+                    logging.debug('ready to update state('+str(resMax)+','+str(cpuMax)+','+str(conMax)+','+str(a)+')')
                     #枚举所有s'不为0的点，得到一个列表
                     result = np.where(p_table[s][a] != 0)
                     result1 = result[0]
@@ -276,14 +276,14 @@ if __name__ == "__main__":
                         minActionValue = np.min(q_table[state])
 
                         totalExpectation += probability * (cost + qAlpha * minActionValue)
-                        logging.debug('Update state:',resIndex,cpuIndex)
-                        logging.debug('cost',cost)
-                        logging.debug('q_table',q_table[state])
-                        logging.debug(probability)
-                        logging.debug('value : ',probability * (cost + qAlpha * minActionValue))
-                    logging.info('previous Q table:',q_table[s][a])
+                        logging.debug('Update state:('+str(resIndex)+','+str(cpuIndex)+')')
+                        logging.debug('cost:'+str(cost))
+                        logging.debug('q_table:'+str(q_table[state]))
+                        logging.debug('pro:'+str(probability))
+                        logging.debug('value : '+str(probability * (cost + qAlpha * minActionValue)))
+                    logging.info('previous Q table:'+str(q_table[s][a]))
                     q_table[s][a] = totalExpectation
-                    logging.info('current Q table:',q_table[s][a])
+                    logging.info('current Q table:'+str(q_table[s][a]))
 
         # 缓存所有数组
         q_file = open('q_table.txt','wb')
@@ -295,5 +295,6 @@ if __name__ == "__main__":
         q_file.close()
         p_flie.close()
         c_file.close()
+        logging.info('cache all files over')
 
 
