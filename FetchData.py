@@ -33,8 +33,8 @@ def fetch_data(api_str, start_time, latsted_time, filename):
 
 # 03 for productpage->reviews->ratings
 # start_time = "2019-10-25 17:12:00"
-start_time = "2020-07-28 06:00:00"
-lasted_time = 5000
+start_time = "2020-07-29 11:57:00"
+lasted_time = 1500
 
 fetch_data(productpage_requestRate_api, start_time, lasted_time, "requestRate.log")
 fetch_data(productpage_podSupply_api, start_time, lasted_time, "podSupply.log")

@@ -4,7 +4,7 @@
 import os
 
 # dirName = ['qlearning-1','qthreshold-1','sarsa-arima-1','qlearning-2','qthreshold-2','sarsa-arima-2']
-dirName = ['0_workload1']
+dirName = ['last_workload2']
 
 cpuFilename = 'cpuUtilization.log'
 responseFilename = 'responseTime.log'
